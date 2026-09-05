@@ -1,0 +1,27 @@
+option(
+  'hb_root',
+  type: 'string',
+  value: '',
+  description: 'Path to the HarfBuzz source tree (defaults to ../hb)',
+)
+
+option(
+  'hb_build',
+  type: 'string',
+  value: '',
+  description: 'Path to the HarfBuzz Meson build directory (defaults to hb_root/build)',
+)
+
+option(
+  'hr_root',
+  type: 'string',
+  value: '',
+  description: 'Path to the HarfRust source tree (defaults to ../hr)',
+)
+
+option(
+  'hr_build',
+  type: 'string',
+  value: '',
+  description: 'Path containing the HarfRust C API library (defaults to hr_root/target/release)',
+)
