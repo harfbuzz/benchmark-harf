@@ -38,7 +38,7 @@ endforeach
 
 hb_inc = hb_root / 'src'
 hb_libdir = hb_build / 'src'
-hr_inc = hr_root / 'harfrust-capi' / 'include'
+hr_inc = hr_root / 'harfrust_capi' / 'include'
 hr_libdir = hr_build
 
 if not fs.exists(hb_inc / 'hb.h')
