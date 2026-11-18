@@ -42,8 +42,18 @@ static test_input_t default_tests[] =
    HB_FILE ("perf/texts/duployan.txt")},
 };
 
+/* Local fonts are optional and are never bundled with the benchmark. */
+static test_input_t aat_tests[] =
+{
+  {"LucidaGrande.ttc", HB_FILE ("perf/texts/en-thelittleprince.txt")},
+  {"Menlo.ttc", HB_FILE ("perf/texts/en-thelittleprince.txt")},
+  {"GeezaPro.ttc", HB_FILE ("perf/texts/fa-thelittleprince.txt")},
+  {"Devanagari Sangam MN.ttc", HB_FILE ("perf/texts/hi-words.txt")},
+};
+
 static char *variations_string = nullptr;
 static char *direction = nullptr;
+static char *aat_font_dir = nullptr;
 
 static GOptionEntry entries[] =
 {
@@ -51,7 +61,9 @@ static GOptionEntry entries[] =
    "Comma-separated font variations to apply during shaping", "VARIATIONS"},
   {"direction", 0, 0, G_OPTION_ARG_STRING, &direction,
    "Direction to apply during shaping", "DIRECTION"},
-  {nullptr},
+  {"aat-font-dir", 0, 0, G_OPTION_ARG_FILENAME, &aat_font_dir,
+   "Directory of optional AAT fonts for default workloads (defaults to HB source tree)", "DIR"},
+  {},
 };
 
 static void
@@ -146,9 +158,25 @@ main (int argc, char **argv)
     register_harfrust_benchmarks (tests[i], options);
   }
 
+  char *aat_paths[G_N_ELEMENTS (aat_tests)] = {};
+  if (!custom_num_tests)
+    for (unsigned i = 0; i < G_N_ELEMENTS (aat_tests); i++)
+    {
+      aat_paths[i] = g_build_filename (aat_font_dir ? aat_font_dir : HB_SOURCE_ROOT,
+                                      aat_tests[i].font_path, nullptr);
+      if (!g_file_test (aat_paths[i], G_FILE_TEST_IS_REGULAR))
+        continue;
+      test_input_t input = {aat_paths[i], aat_tests[i].text_path};
+      register_harfbuzz_benchmarks (input, options);
+      register_harfrust_benchmarks (input, options);
+    }
+
   benchmark::RunSpecifiedBenchmarks ();
   benchmark::Shutdown ();
 
+  for (char *path : aat_paths)
+    g_free (path);
+  g_free (aat_font_dir);
   if (tests != default_tests)
     std::free (tests);
   g_free (variations_string);
