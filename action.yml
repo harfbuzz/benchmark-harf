@@ -1,0 +1,82 @@
+name: Paired shaping benchmark
+description: Compare two HarfBuzz or HarfRust revisions with Tango on one Linux runner
+inputs:
+  engine:
+    description: hb for native HarfBuzz or hr for the HarfRust C API
+    required: true
+  baseline:
+    description: Baseline commit SHA of the selected engine
+    required: true
+  candidate:
+    description: Candidate commit SHA. Use the baseline SHA for an A/A control.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Check inputs
+      shell: bash
+      env:
+        ENGINE: ${{ inputs.engine }}
+        BASE: ${{ inputs.baseline }}
+        CANDIDATE: ${{ inputs.candidate }}
+      run: |
+        [[ $ENGINE == hb || $ENGINE == hr ]]
+        [[ $BASE =~ ^[[:xdigit:]]{40}$ && $CANDIDATE =~ ^[[:xdigit:]]{40}$ ]]
+
+    - uses: actions/checkout@v4
+      with:
+        repository: ${{ inputs.engine == 'hb' && 'harfbuzz/harfbuzz' || 'harfbuzz/harfrust' }}
+        ref: ${{ inputs.baseline }}
+        path: tango-base
+        persist-credentials: false
+
+    - uses: actions/checkout@v4
+      if: inputs.candidate != inputs.baseline
+      with:
+        repository: ${{ inputs.engine == 'hb' && 'harfbuzz/harfbuzz' || 'harfbuzz/harfrust' }}
+        ref: ${{ inputs.candidate }}
+        path: tango-candidate
+        persist-credentials: false
+
+    - uses: actions/checkout@v4
+      with:
+        repository: harfbuzz/harfbuzz
+        ref: ed51d202cfd0c29372d3ee056eb0dc715688a410
+        path: tango-corpus
+        sparse-checkout: |
+          perf/fonts
+          perf/texts
+        persist-credentials: false
+
+    - name: Install HarfBuzz build tools
+      if: inputs.engine == 'hb'
+      shell: bash
+      run: sudo apt-get update -qq && sudo apt-get install -y meson ninja-build
+
+    - name: Build and compare
+      shell: bash
+      env:
+        ENGINE: ${{ inputs.engine }}
+        BASE: ${{ inputs.baseline }}
+        CANDIDATE: ${{ inputs.candidate }}
+      run: |
+        out=$(mktemp -d "$RUNNER_TEMP/tango.XXXXXXXX")
+        "$GITHUB_ACTION_PATH/tango/build-engine.sh" "$ENGINE" tango-base "$out/base"
+        baseline="$out/base/tango/release/benchmark-harf-tango"
+        candidate="$baseline"
+        if [[ "$BASE" != "$CANDIDATE" ]]; then
+          "$GITHUB_ACTION_PATH/tango/build-engine.sh" "$ENGINE" tango-candidate "$out/candidate"
+          candidate="$out/candidate/tango/release/benchmark-harf-tango"
+        fi
+        {
+          echo "### Tango · $ENGINE"
+          echo
+          echo "Baseline \`$BASE\`, candidate \`$CANDIDATE\`."
+          echo
+        } >> "$GITHUB_STEP_SUMMARY"
+        python3 "$GITHUB_ACTION_PATH/tango/compare.py" "$baseline" "$candidate" tango-corpus tango-results
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: tango-${{ inputs.engine }}-${{ github.run_attempt }}
+        path: tango-results

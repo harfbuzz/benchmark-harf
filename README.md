@@ -62,3 +62,37 @@ meson setup build \
   -Dhr_root=/path/to/harfrust \
   -Dhr_build=/path/to/harfrust/target/release
 ```
+
+## Paired comparisons with Tango
+
+Tango compares two warmed shaping workloads on the same runner. Each worker
+has its own executable, engine library, font and buffer. Both use the same
+C++ shaping loop as the Google Benchmark executable. A sample measures one
+pass through the newline-delimited corpus. Font loading and warm-up happen
+before timing.
+
+On Linux, build a worker for each source revision you want to compare. Use
+a separate output directory per revision so each executable loads its own
+library. For example, to compare two HarfBuzz revisions:
+
+```sh
+tango/build-engine.sh hb /path/to/harfbuzz-base /tmp/hb-base
+tango/build-engine.sh hb /path/to/harfbuzz-pr /tmp/hb-pr
+
+HARF_FONT=/path/to/font.ttf HARF_TEXT=/path/to/text.txt \
+  /tmp/hb-pr/tango/release/benchmark-harf-tango compare \
+  /tmp/hb-base/tango/release/benchmark-harf-tango --time 5
+```
+
+Use `hr` for two HarfRust revisions, or compare an `hr` candidate with an
+`hb` baseline. Both workers inherit the same `HARF_FONT`, `HARF_TEXT` and
+optional `HARF_DIRECTION` and `HARF_VARIATIONS`. End each line with a newline.
+
+The GitHub action takes `engine` (`hb` or `hr`), `baseline`, and `candidate`
+(full commit SHAs). Use the PR base SHA and its test merge SHA to measure the
+change on top of the current base. Equal SHAs run an A/A control using the same
+built executable in both workers. The action uses pinned font and text data
+for both workers, runs three five-second comparisons per workload, writes
+baseline and candidate times to the job summary, and uploads raw paired samples.
+Measured slowdowns are reported. Build, shaping and measurement failures fail
+the job.
