@@ -12,6 +12,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <optional>
 #include <string>
 
 // Each translation unit uses the functions from its selected C API.
@@ -120,7 +121,7 @@ public:
   bool run ()
   {
     return shape (buf, font, text, text_length, shaper,
-                  direction.empty () ? nullptr : direction.c_str ());
+                  direction ? direction->c_str () : nullptr);
   }
 
 private:
@@ -130,7 +131,7 @@ private:
   const char *text = nullptr;
   unsigned text_length = 0;
   const char *shaper = nullptr;
-  std::string direction;
+  std::optional<std::string> direction;
 };
 
 } // namespace

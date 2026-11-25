@@ -42,7 +42,9 @@ fn benchmarks() -> impl IntoBenchmarks {
     let font = CString::new(font).unwrap();
     let text = CString::new(text).unwrap();
     let variations = CString::new(env::var("HARF_VARIATIONS").unwrap_or_default()).unwrap();
-    let direction = CString::new(env::var("HARF_DIRECTION").unwrap_or_default()).unwrap();
+    let direction = env::var("HARF_DIRECTION")
+        .ok()
+        .map(|s| CString::new(s).unwrap());
     [benchmark_fn(name, move |b| {
         // prepare opens the files and completes one warm-up pass before Tango
         // starts measuring. It retains no pointers into these strings.
@@ -51,7 +53,7 @@ fn benchmarks() -> impl IntoBenchmarks {
                 font.as_ptr(),
                 text.as_ptr(),
                 variations.as_ptr(),
-                direction.as_ptr(),
+                direction.as_ref().map_or(std::ptr::null(), |s| s.as_ptr()),
             )
         };
         let mut workload = Workload(NonNull::new(raw).expect("could not prepare workload"));

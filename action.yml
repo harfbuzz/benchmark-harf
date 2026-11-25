@@ -23,14 +23,14 @@ runs:
         [[ $ENGINE == hb || $ENGINE == hr ]]
         [[ $BASE =~ ^[[:xdigit:]]{40}$ && $CANDIDATE =~ ^[[:xdigit:]]{40}$ ]]
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         repository: ${{ inputs.engine == 'hb' && 'harfbuzz/harfbuzz' || 'harfbuzz/harfrust' }}
         ref: ${{ inputs.baseline }}
         path: tango-base
         persist-credentials: false
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       if: inputs.candidate != inputs.baseline
       with:
         repository: ${{ inputs.engine == 'hb' && 'harfbuzz/harfbuzz' || 'harfbuzz/harfrust' }}
@@ -38,7 +38,7 @@ runs:
         path: tango-candidate
         persist-credentials: false
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         repository: harfbuzz/harfbuzz
         ref: ed51d202cfd0c29372d3ee056eb0dc715688a410
@@ -76,7 +76,7 @@ runs:
         } >> "$GITHUB_STEP_SUMMARY"
         python3 "$GITHUB_ACTION_PATH/tango/compare.py" "$baseline" "$candidate" tango-corpus tango-results
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: tango-${{ inputs.engine }}-${{ github.run_attempt }}
         path: tango-results
