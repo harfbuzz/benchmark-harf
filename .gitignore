@@ -1,3 +1,5 @@
 /build*/
 /subprojects/*/
 /subprojects/packagecache/
+
+/tango/target/
