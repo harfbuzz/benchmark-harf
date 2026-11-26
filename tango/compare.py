@@ -15,22 +15,30 @@ def main():
     parser.add_argument("output", type=Path)
     parser.add_argument("--repetitions", type=int, default=3)
     parser.add_argument("--seconds", type=int, default=5)
+    parser.add_argument("--title", help="Heading for the Markdown report")
+    parser.add_argument("--labels", nargs=2, metavar=("BASE", "CANDIDATE"),
+                        default=("Baseline", "Candidate"), help="Column labels for the two workers")
     args = parser.parse_args()
     if min(args.repetitions, args.seconds) < 1:
         parser.error("repetitions and seconds must be positive")
 
     cases = [
-        ("Roboto-Regular.ttf", "en-thelittleprince.txt"),
-        ("Amiri-Regular.ttf", "fa-thelittleprince.txt"),
+        ("perf/fonts/Roboto-Regular.ttf", "en-thelittleprince.txt"),
+        ("perf/fonts/Amiri-Regular.ttf", "fa-thelittleprince.txt"),
+        ("test/subset/data/fonts/SourceSerifVariable-Roman.ttf", "react-dom.txt"),
+        ("perf/fonts/NotoNastaliqUrdu-Regular.ttf", "fa-thelittleprince.txt"),
+        ("perf/fonts/NotoNastaliqUrdu-Regular.ttf", "fa-words.txt"),
     ]
-    summary = ["| Font / text | Trial | Baseline | Candidate | Difference |",
-               "|---|---:|---:|---:|---:|"]
-    for font, text in cases:
-        env = dict(os.environ, HARF_FONT=str(args.corpus / "perf/fonts" / font),
+    summary = [f"### {args.title}", ""] if args.title else []
+    summary.extend([f"| Font / text | Trial | {args.labels[0]} | {args.labels[1]} | Difference |",
+                    "|---|---:|---:|---:|---:|"])
+    for font_path, text in cases:
+        font = Path(font_path).name
+        env = dict(os.environ, HARF_FONT=str(args.corpus / font_path),
                    HARF_TEXT=str(args.corpus / "perf/texts" / text), NO_COLOR="1")
         name = f"{font}/{text}"
         for trial in range(1, args.repetitions + 1):
-            samples = args.output / font / str(trial)
+            samples = args.output / font / text / str(trial)
             samples.mkdir(parents=True, exist_ok=False)
             cmd = [str(args.candidate.resolve()), "compare", str(args.baseline.resolve()),
                    "--time", str(args.seconds), "--dump", str(samples)]
@@ -54,7 +62,7 @@ def main():
     (args.output / "summary.md").write_text(report)
     if step_summary := os.getenv("GITHUB_STEP_SUMMARY"):
         with open(step_summary, "a") as out:
-            out.write(report)
+            out.write(report + "\n")
 
 
 if __name__ == "__main__":

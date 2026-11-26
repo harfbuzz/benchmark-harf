@@ -91,8 +91,18 @@ optional `HARF_DIRECTION` and `HARF_VARIATIONS`. End each line with a newline.
 The GitHub action takes `engine` (`hb` or `hr`), `baseline`, and `candidate`
 (full commit SHAs). Use the PR base SHA and its test merge SHA to measure the
 change on top of the current base. Equal SHAs run an A/A control using the same
-built executable in both workers. The action uses pinned font and text data
-for both workers, runs three five-second comparisons per workload, writes
-baseline and candidate times to the job summary, and uploads raw paired samples.
-Measured slowdowns are reported. Build, shaping and measurement failures fail
-the job.
+built executable in both workers.
+
+Set `peer-ref: main` to also compare the same candidate build with the other
+engine. The action checks out that branch once per run and links to the exact
+commits in each result table. To reproduce a cross-engine comparison, pass the
+recorded peer SHA in place of `main`. The baseline column is the PR base in the
+first table and the other engine in the second. A positive difference means
+the candidate took longer.
+
+Both comparisons use the same pinned corpus. They run three five-second trials
+each for Roboto with English prose, Amiri with Persian prose, Source Serif
+Variable with `react-dom.txt`, and Noto Nastaliq Urdu with Persian prose and a
+Persian word list. The Actions summary shows each trial. The artifact contains
+the tables and raw paired samples for each comparison. Measured slowdowns are
+informational. Build, shaping and measurement failures fail the job.
