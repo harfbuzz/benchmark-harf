@@ -9,7 +9,7 @@ mkdir -p "$out"
 
 case "$engine" in
   hb)
-    meson setup "$out/hb" "$src" --buildtype=release -Dauto_features=disabled
+    meson setup "$out/hb" "$src" --buildtype=release -Db_lto=true -Dauto_features=disabled
     meson compile -C "$out/hb" harfbuzz:shared_library
     export HARF_INCLUDE="$src/src" HARF_LIB="$out/hb/src"
     ;;

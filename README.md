@@ -71,6 +71,10 @@ C++ shaping loop as the Google Benchmark executable. A sample measures one
 pass through the newline-delimited corpus. Font loading and warm-up happen
 before timing.
 
+The workers link to release libraries built at optimization level 3 with LTO.
+For HarfBuzz, the script enables Meson’s LTO option. HarfRust sets fat LTO
+in its workspace release profile.
+
 On Linux, build a worker for each source revision you want to compare. Use
 a separate output directory per revision so each executable loads its own
 library. For example, to compare two HarfBuzz revisions:
